@@ -1,0 +1,3 @@
+/home/bartosz/Documents/universitaet/master/numSim/tutorials/2/vorlage_blatt02/build/CMakeFiles/edit_cache.dir
+/home/bartosz/Documents/universitaet/master/numSim/tutorials/2/vorlage_blatt02/build/CMakeFiles/rebuild_cache.dir
+/home/bartosz/Documents/universitaet/master/numSim/tutorials/2/vorlage_blatt02/build/CMakeFiles/numsim.dir
