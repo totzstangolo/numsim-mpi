@@ -20,9 +20,48 @@
 #include "typedef.hpp"
 #include "communicator.hpp"
 
+//////////////////
+#include <cstdlib>
+#include <iostream>
+#include <cmath>
+//////////////////
+
 //------------------------------------------------------------------------------
 Communicator::Communicator(int *argc, char ***argv){
-
+    MPI_Init(argc,argv);
+    _tdim[0]=0;
+    _tdim[1]=0;
+    MPI_Comm_size(MPI_COMM_WORLD,&_size);
+    MPI_Comm_rank(MPI_COMM_WORLD,&_rank);
+    MPI_Request reqs[2*(_size-1)];
+    MPI_Status stats[2*(_size-1)];
+    int recvBuf[2];
+    if(_rank!=0){
+        MPI_Recv(&_tdim,2,MPI_INT,0,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    }else{
+        int xDim=1;
+        int yDim=1;
+        int l_div=1;
+        while(yDim<sqrt(_size)+1){
+            if(_size % yDim == 0) l_div = yDim;
+            yDim++;
+        }
+        yDim = l_div;
+        xDim = _size/yDim;
+        if(yDim>xDim){
+            l_div = yDim;
+            yDim = xDim;
+            xDim = l_div;
+        }
+        _tdim[0]=xDim;
+        _tdim[1]=yDim;
+        for(int iCount=1;iCount<_size;iCount++){
+            MPI_Send(&_tdim,2,MPI_INT,iCount,0,MPI_COMM_WORLD);
+        }
+    }
+    std::cout << "I know about decomposition ("<<_tdim[0]<<","<<_tdim[1]<< ")!"
+    << std::endl;
+    MPI_Finalize();
 }
 
   /** Communicator destructor; finalizes MPI Environment
@@ -35,15 +74,13 @@ Communicator::~Communicator(){
    *  fields lower left corner
    */
 const multi_index_t &Communicator::ThreadIdx() const{
-    const multi_index_t dummy = {1,1};
-    return dummy;
+    return _tidx;
 }
 
   /** Returns the way the domain is partitioned among all processes
    */
 const multi_index_t &Communicator::ThreadDim() const{
-    const multi_index_t dummy = {1,1};
-    return dummy;
+    return _tdim;
 }
 
   /** Returns whether this process is a red or a black field
@@ -117,15 +154,13 @@ const bool Communicator::isBottom() const{
   /** Get MPI rank of current process
    */
 const int &Communicator::getRank() const{
-    const int dummy = 1.0;
-    return dummy;
+    return _rank;
 }
 
   /** Get number of MPI processes
    */
 const int &Communicator::getSize() const{
-    const int dummy = 1.0;
-    return dummy;
+    return _size;
 }
 
   /** Function to sync ghost layer on left boundary:

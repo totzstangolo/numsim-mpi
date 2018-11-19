@@ -27,12 +27,18 @@
 #include <iostream>
 #include <sys/stat.h>
 
+//////////////////
+#include <cstdlib>
+//////////////////
+
 int main(int argc, char **argv) {
 
   // Create parameter and geometry instances with default values
   Communicator comm(&argc, &argv);
   Parameter param;
+
   Geometry geom(&comm);
+  exit(0);
   // Create the fluid solver
   Compute comp(&geom, &param, &comm);
 
