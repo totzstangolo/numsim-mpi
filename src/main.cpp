@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   Parameter param;
 
   Geometry geom(&comm);
-  exit(0);
+
   // Create the fluid solver
   Compute comp(&geom, &param, &comm);
 

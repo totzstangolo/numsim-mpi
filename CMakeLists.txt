@@ -27,7 +27,8 @@ endif (NOT CMAKE_BUILD_TYPE)
 set (CMAKE_CC_COMPILER "/usr/bin/gcc")
 set (CMAKE_CXX_COMPILER "/usr/bin/g++")
 
-set (GOOD_FLAGS "-Wall -Wextra -pedantic -std=c++11")
+#set (GOOD_FLAGS "-Wall -Wextra -pedantic -std=c++11")
+set (GOOD_FLAGS "-pedantic -std=c++11")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GOOD_FLAGS}")
 
 # debug visu?

@@ -27,40 +27,41 @@
 //////////////////
 
 //------------------------------------------------------------------------------
+// Determines _tdim by determining largest divisor of N_processes, while
+// being smaller than sqrt(N_processes).
+// _tdim is then {N_processes/divisor, divisor} (except for N_processes = 2).
+// Rank 0 broadcasts _tdim to the remaining processes.
 Communicator::Communicator(int *argc, char ***argv){
     MPI_Init(argc,argv);
     _tdim[0]=0;
     _tdim[1]=0;
     MPI_Comm_size(MPI_COMM_WORLD,&_size);
     MPI_Comm_rank(MPI_COMM_WORLD,&_rank);
-    MPI_Request reqs[2*(_size-1)];
-    MPI_Status stats[2*(_size-1)];
-    int recvBuf[2];
-    if(_rank!=0){
-        MPI_Recv(&_tdim,2,MPI_INT,0,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    }else{
-        int xDim=1;
-        int yDim=1;
+    int dim[2] = {1,1};
+    if(_rank==0){
         int l_div=1;
-        while(yDim<sqrt(_size)+1){
-            if(_size % yDim == 0) l_div = yDim;
-            yDim++;
+        while(dim[1]<sqrt(_size)+1){
+            if(_size % dim[1] == 0) l_div = dim[1];
+            dim[1]++;
         }
-        yDim = l_div;
-        xDim = _size/yDim;
-        if(yDim>xDim){
-            l_div = yDim;
-            yDim = xDim;
-            xDim = l_div;
-        }
-        _tdim[0]=xDim;
-        _tdim[1]=yDim;
-        for(int iCount=1;iCount<_size;iCount++){
-            MPI_Send(&_tdim,2,MPI_INT,iCount,0,MPI_COMM_WORLD);
+        dim[1] = l_div;
+        dim[0] = _size/dim[1];
+        if(dim[1]>dim[0]){
+            l_div = dim[1];
+            dim[1] = dim[0];
+            dim[0] = l_div;
         }
     }
-    std::cout << "I know about decomposition ("<<_tdim[0]<<","<<_tdim[1]<< ")!"
-    << std::endl;
+    MPI_Bcast(dim,2,MPI_INT,0,MPI_COMM_WORLD);
+    _tdim[0]=dim[0];
+    _tdim[1]=dim[1];
+    // _tidx[0]=_rank*(_tdim[0])
+    _tidx = {_rank % _tdim[0], _rank / _tdim[0]};
+    // std::cout << "My (rank " << _rank <<") Position is " <<_tidx[0]<<","<<_tidx[1]
+    // << std::endl;
+    // if(_rank==0){
+    //     std::cout << _tdim[0]<<","<<_tdim[1]<< std::endl;
+    // }
     MPI_Finalize();
 }
 
