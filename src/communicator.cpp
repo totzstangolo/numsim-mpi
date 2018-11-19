@@ -71,7 +71,7 @@ Communicator::Communicator(int *argc, char ***argv){
     //     color = "Black";
     // }
     // std::cout << "My (rank " << _rank <<") Position is " <<_tidx[0]<<","<<_tidx[1]
-    // << " and i am " << color << std::endl;
+    // << " and am I at Left? " << isLeft() << std::endl;
     // if(_rank==0){
     //     std::cout << _tdim[0]<<","<<_tdim[1]<< std::endl;
     // }
@@ -108,8 +108,9 @@ const bool &Communicator::EvenOdd() const{
    * \param [in] val The data over which the sum is to be calculated
    */
 real_t Communicator::gatherSum(const real_t &val) const{
-    real_t dummy = 1.0;
-    return dummy;
+    real_t sum;
+    MPI_Allreduce(&val,&sum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    return sum;
 }
 
   /** Finds the minimum of the values and distributes the result among
@@ -118,8 +119,9 @@ real_t Communicator::gatherSum(const real_t &val) const{
    * \param [in] val The data over which to find the minimum
    */
 real_t Communicator::gatherMin(const real_t &val) const{
-    real_t dummy = 1.0;
-    return dummy;
+    real_t min;
+    MPI_Allreduce(&val,&min,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
+    return min;
 }
 
   /** Finds the maximum of the values and distributes the result among
@@ -128,8 +130,9 @@ real_t Communicator::gatherMin(const real_t &val) const{
    * \param [in] val The data over which to find the maximum
    */
 real_t Communicator::gatherMax(const real_t &val) const{
-    real_t dummy = 1.0;
-    return dummy;
+    real_t max;
+    MPI_Allreduce(&val,&max,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
+    return max;
 }
 
   /** Synchronizes ghost layer

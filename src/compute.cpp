@@ -62,6 +62,7 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_p->Initialize(0);
 
 	_comm->copyBoundary(_p);
+	_comm->gatherSum(_u->Max());
 
 	//create solver (used script omega, not param omega)
 	_solver = new SOR(_geom, _param->Omega());
