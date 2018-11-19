@@ -6,6 +6,7 @@
 #include "compute.hpp"
 #include "iterator.hpp"
 #include "solver.hpp"
+#include "communicator.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <cmath>
@@ -16,16 +17,16 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 				 const Communicator *comm){
 	_geom = geom;
 	_param = param;
-
+	_comm = comm;
 	// Initializing time, dtlimit and epslimit_
 	_t = 0.0;
 	multi_real_t h = _geom->Mesh();
-#ifdef USE_OPT_DT
+// #ifdef USE_OPT_DT
 	_dtlimit = h[0] * h[0] * h[1] * h[1] * _param->Re() /
 			( 2 * ((h[0] * h[0]) + (h[1] * h[1])));
-#else
-	_dtlimit = _param->Dt();
-#endif  // USE_OPT_DT
+// #else
+// 	_dtlimit = _param->Dt();
+// #endif  // USE_OPT_DT
 	_epslimit = _param->Eps() * _param->Eps() * _geom->Size()[0] * _geom->Size()[1];
 
 	// creating grids with offset
@@ -35,6 +36,11 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_u = new Grid(_geom, compute_offset_x);
 	_F = new Grid(_geom, compute_offset_x);
 	_u->Initialize(0);
+
+	_comm->copyBoundary(_u);
+	// _comm->~Communicator();
+    // exit(0);
+
 	_geom->Update_U(_u);
 
 	multi_real_t compute_offset_y;
@@ -45,6 +51,8 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_v->Initialize(0);
 	_geom->Update_V(_v);
 
+	_comm->copyBoundary(_v);
+
 	multi_real_t compute_offset_p;
 	compute_offset_p[0] = -0.5 * h[0];
 	compute_offset_p[1] = -0.5 * h[1];
@@ -52,6 +60,8 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_rhs = new Grid(_geom, compute_offset_p);
 	_tmp = new Grid(_geom, compute_offset_p);
 	_p->Initialize(0);
+
+	_comm->copyBoundary(_p);
 
 	//create solver (used script omega, not param omega)
 	_solver = new SOR(_geom, _param->Omega());
@@ -75,14 +85,14 @@ void Compute::TimeStep(bool printInfo){
 
 	// Compute like in script page 23
 	//compute dt
-#ifdef USE_OPT_DT
+// #ifdef USE_OPT_DT
 	multi_real_t max;
 	max[0] = _u->Max();
 	max[1] = _v->Max();
 	real_t dt;
 	real_t limit = _dtlimit;
 	if(max[0] > 0 && max[1] > 0){
-	   if(_geom->Mesh()[0]/max[0] < _geom->Mesh()[0]/max[0]){
+	   if(_geom->Mesh()[0]/max[0] < _geom->Mesh()[1]/max[1]){
 	 	limit = _geom->Mesh()[0]/max[0];
 	   }else{
 		limit = _geom->Mesh()[1]/max[1];
@@ -93,9 +103,9 @@ void Compute::TimeStep(bool printInfo){
 	}else{
 		dt = _dtlimit * _param->Tau();
 	}
-#else
-	real_t dt = _dtlimit * _param->Tau();
-#endif  // USE_OPT_DT
+// #else
+// 	real_t dt = _dtlimit * _param->Tau();
+// #endif  // USE_OPT_DT
 
 	if(printInfo) {
 		printf("dt: %f \n", dt);

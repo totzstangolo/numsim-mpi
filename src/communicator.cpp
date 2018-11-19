@@ -19,6 +19,8 @@
 #include "grid.hpp"
 #include "typedef.hpp"
 #include "communicator.hpp"
+#include "iterator.hpp"
+#include "geometry.hpp"
 
 //////////////////
 #include <cstdlib>
@@ -55,20 +57,30 @@ Communicator::Communicator(int *argc, char ***argv){
     MPI_Bcast(dim,2,MPI_INT,0,MPI_COMM_WORLD);
     _tdim[0]=dim[0];
     _tdim[1]=dim[1];
-    // _tidx[0]=_rank*(_tdim[0])
+
     _tidx = {_rank % _tdim[0], _rank / _tdim[0]};
+    if((_tidx[0]+_tidx[1])%2==0){
+        _evenodd = true;
+    }else{
+        _evenodd = false;
+    }
+    // char *color;
+    // if(_evenodd){
+    //     color = "Red";
+    // }else{
+    //     color = "Black";
+    // }
     // std::cout << "My (rank " << _rank <<") Position is " <<_tidx[0]<<","<<_tidx[1]
-    // << std::endl;
+    // << " and i am " << color << std::endl;
     // if(_rank==0){
     //     std::cout << _tdim[0]<<","<<_tdim[1]<< std::endl;
     // }
-    MPI_Finalize();
 }
 
   /** Communicator destructor; finalizes MPI Environment
    */
 Communicator::~Communicator(){
-
+    MPI_Finalize();
 }
 
   /** Returns the position of the current process with respect to the
@@ -87,7 +99,7 @@ const multi_index_t &Communicator::ThreadDim() const{
   /** Returns whether this process is a red or a black field
    */
 const bool &Communicator::EvenOdd() const{
-    return true;
+    return _evenodd;
 }
 
   /** Gets the sum of all values and distributes the result among all
@@ -125,31 +137,42 @@ real_t Communicator::gatherMax(const real_t &val) const{
    * \param [in] grid  The values to sync
    */
 void Communicator::copyBoundary(Grid *grid) const{
-
+    copyLeftBoundary(grid);
+    copyRightBoundary(grid);
+    copyTopBoundary(grid);
+    copyBottomBoundary(grid);
 }
 
   /** Decide whether our left boundary is a domain boundary
    */
 const bool Communicator::isLeft() const{
-    return true;
+    bool isBound=false;
+    if(ThreadIdx()[0]==0) isBound=true;
+    return isBound;
 }
 
   /** Decide whether our right boundary is a domain boundary
    */
 const bool Communicator::isRight() const{
-    return true;
+    bool isBound=false;
+    if(ThreadIdx()[0]==ThreadDim()[0]-1) isBound=true;
+    return isBound;
 }
 
   /** Decide whether our top boundary is a domain boundary
    */
 const bool Communicator::isTop() const{
-    return true;
+    bool isBound=false;
+    if(ThreadIdx()[1]==ThreadDim()[1]-1) isBound=true;
+    return isBound;
 }
 
   /** Decide whether our bottom boundary is a domain boundary
    */
 const bool Communicator::isBottom() const{
-    return true;
+    bool isBound=false;
+    if(ThreadIdx()[1]==0) isBound=true;
+    return isBound;
 }
 
   /** Get MPI rank of current process
@@ -182,6 +205,33 @@ const int &Communicator::getSize() const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyLeftBoundary(Grid *grid) const{
+    multi_index_t size = {grid->getGeometry()->Size()[0],
+                          grid->getGeometry()->Size()[1]};
+    double sendBuf[size[1]];
+    double recvBuf[size[1]];
+    int counter = 0;
+    if(!isLeft()){
+        BoundaryIterator iterL(grid->getGeometry());
+        iterL.SetBoundary(1);
+        for(iterL.First();iterL.Valid();iterL.Next()){
+            sendBuf[counter] = grid->Cell(iterL.Right());
+            counter++;
+        }
+        MPI_Send(&sendBuf,size[1],MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
+        std::cout << _rank << " sent to " << _rank-1 << std::endl;
+    }
+    if(!isRight()){
+        MPI_Recv(&recvBuf,size[1],MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+        std::cout << _rank << " received from " << _rank+1 << std::endl;
+    }
+    BoundaryIterator iterR(grid->getGeometry());
+    iterR.SetBoundary(3);
+    counter=0;
+    for(iterR.First();iterR.Valid();iterR.Next()){
+        grid->Cell(iterR) = recvBuf[counter];
+        counter++;
+    }
     return true;
 }
 
@@ -191,6 +241,33 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyRightBoundary(Grid *grid) const{
+    multi_index_t size = {grid->getGeometry()->Size()[0],
+                          grid->getGeometry()->Size()[1]};
+    double sendBuf[size[1]];
+    double recvBuf[size[1]];
+    int counter = 0;
+    if(!isRight()){
+        BoundaryIterator iterR(grid->getGeometry());
+        iterR.SetBoundary(3);
+        for(iterR.First();iterR.Valid();iterR.Next()){
+            sendBuf[counter] = grid->Cell(iterR.Left());
+            counter++;
+        }
+        MPI_Send(&sendBuf,size[1],MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD);
+        std::cout << _rank << " sent to " << _rank+1 << std::endl;
+    }
+    if(!isLeft()){
+        MPI_Recv(&recvBuf,size[1],MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+        std::cout << _rank << " received from " << _rank-1 << std::endl;
+    }
+    BoundaryIterator iterL(grid->getGeometry());
+    iterL.SetBoundary(1);
+    counter=0;
+    for(iterL.First();iterL.Valid();iterL.Next()){
+        grid->Cell(iterL) = recvBuf[counter];
+        counter++;
+    }
     return true;
 }
 
@@ -200,6 +277,33 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyTopBoundary(Grid *grid) const{
+    multi_index_t size = {grid->getGeometry()->Size()[0],
+                          grid->getGeometry()->Size()[1]};
+    double sendBuf[size[0]];
+    double recvBuf[size[0]];
+    int counter = 0;
+    if(!isTop()){
+        BoundaryIterator iterT(grid->getGeometry());
+        iterT.SetBoundary(2);
+        for(iterT.First();iterT.Valid();iterT.Next()){
+            sendBuf[counter] = grid->Cell(iterT.Down());
+            counter++;
+        }
+        MPI_Send(&sendBuf,size[0],MPI_DOUBLE,_rank+ThreadDim()[0],0,MPI_COMM_WORLD);
+        std::cout << _rank << " sent to " << _rank+ThreadDim()[0] << std::endl;
+    }
+    if(!isBottom()){
+        MPI_Recv(&recvBuf,size[0],MPI_DOUBLE,_rank-ThreadDim()[0],0,MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+        std::cout << _rank << " received from " << _rank-ThreadDim()[0] << std::endl;
+    }
+    BoundaryIterator iterB(grid->getGeometry());
+    iterB.SetBoundary(0);
+    counter=0;
+    for(iterB.First();iterB.Valid();iterB.Next()){
+        grid->Cell(iterB) = recvBuf[counter];
+        counter++;
+    }
     return true;
 }
 
@@ -209,5 +313,32 @@ bool Communicator::copyTopBoundary(Grid *grid) const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyBottomBoundary(Grid *grid) const{
+    multi_index_t size = {grid->getGeometry()->Size()[0],
+                          grid->getGeometry()->Size()[1]};
+    double sendBuf[size[0]];
+    double recvBuf[size[0]];
+    int counter = 0;
+    if(!isBottom()){
+        BoundaryIterator iterB(grid->getGeometry());
+        iterB.SetBoundary(0);
+        for(iterB.First();iterB.Valid();iterB.Next()){
+            sendBuf[counter] = grid->Cell(iterB.Top());
+            counter++;
+        }
+        MPI_Send(&sendBuf,size[0],MPI_DOUBLE,_rank-ThreadDim()[0],0,MPI_COMM_WORLD);
+        std::cout << _rank << " sent to " << _rank-ThreadDim()[0] << std::endl;
+    }
+    if(!isTop()){
+        MPI_Recv(&recvBuf,size[0],MPI_DOUBLE,_rank+ThreadDim()[0],0,MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+        std::cout << _rank << " received from " << _rank+ThreadDim()[0] << std::endl;
+    }
+    BoundaryIterator iterT(grid->getGeometry());
+    iterT.SetBoundary(2);
+    counter=0;
+    for(iterT.First();iterT.Valid();iterT.Next()){
+        grid->Cell(iterT) = recvBuf[counter];
+        counter++;
+    }
     return true;
 }

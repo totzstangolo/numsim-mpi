@@ -38,7 +38,10 @@ int main(int argc, char **argv) {
   Parameter param;
 
   Geometry geom(&comm);
-
+  // std::cout << "Cells: " << geom.Length()[0]
+  // << std::endl;
+  // comm.~Communicator();
+  // exit(0);
   // Create the fluid solver
   Compute comp(&geom, &param, &comm);
 

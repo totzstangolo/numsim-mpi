@@ -137,14 +137,77 @@ const multi_real_t &Geometry::TotalLength() const { return _length; }
 const multi_real_t &Geometry::Mesh() const { return _h; }
 //------------------------------------------------------------------------------
 void Geometry::Update_U(Grid *u) const {
-  // to be implemented
+    //Dirichlet boundary condition
+  	BoundaryIterator bIt(this);
+  	//bottom
+  	bIt.SetBoundary(0);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		u->Cell(bIt) = - u->Cell(bIt.Top());
+  	}
+  	//left
+  	bIt.SetBoundary(1);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		u->Cell(bIt) = 0.0;
+  	}
+  	//top
+  	bIt.SetBoundary(2);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		u->Cell(bIt) = 2.0 * _velocity[0] - u->Cell(bIt.Down());
+  	}
+  	//right
+  	bIt.SetBoundary(3);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		u->Cell(bIt.Left()) = 0.0;
+  	}
 }
 //------------------------------------------------------------------------------
 void Geometry::Update_V(Grid *v) const {
-  // to be implemented
+    //Dirichlet boundary condition
+  	BoundaryIterator bIt(this);
+  	//bottom
+  	bIt.SetBoundary(0);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		v->Cell(bIt) = 0.0;
+  	}
+  	//left
+  	bIt.SetBoundary(1);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		v->Cell(bIt) = - v->Cell(bIt.Right());
+  	}
+  	//top
+  	bIt.SetBoundary(2);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		v->Cell(bIt.Down()) = _velocity[1];
+  	}
+  	//right
+  	bIt.SetBoundary(3);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		v->Cell(bIt) = - v->Cell(bIt.Left());
+  	}
 }
 //------------------------------------------------------------------------------
 void Geometry::Update_P(Grid *p) const {
-  // to be implemented
+    //homogeneous Neumann boundary condition
+  	BoundaryIterator bIt(this);
+  	//bottom
+  	bIt.SetBoundary(0);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		p->Cell(bIt) = p->Cell(bIt.Top());
+  	}
+  	//left
+  	bIt.SetBoundary(1);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		p->Cell(bIt) = p->Cell(bIt.Right());
+  	}
+  	//top
+  	bIt.SetBoundary(2);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		p->Cell(bIt) = p->Cell(bIt.Down());
+  	}
+  	//right
+  	bIt.SetBoundary(3);
+  	for(bIt.First(); bIt.Valid(); bIt.Next()){
+  		p->Cell(bIt) = p->Cell(bIt.Left());
+  	}
 }
 //------------------------------------------------------------------------------

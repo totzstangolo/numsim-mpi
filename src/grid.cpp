@@ -185,3 +185,12 @@ real_t Grid::AbsMax() const{
 real_t *Grid::Data(){
 	return _data;
 }
+
+const multi_real_t &Grid::getOffset() const{
+	return _offset;
+}
+
+/// Return a pointer to the Geometry
+const Geometry *Grid::getGeometry() const{
+	return _geom;
+}
