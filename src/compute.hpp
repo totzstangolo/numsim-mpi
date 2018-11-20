@@ -56,6 +56,9 @@ private:
   // current timestep
   real_t _t;
 
+  /// maximales dt
+  real_t _max_dt;
+
   // donor-cell diffusion condition (p. 27)
   real_t _dtlimit;
 

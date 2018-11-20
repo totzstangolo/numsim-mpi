@@ -46,12 +46,11 @@ real_t Solver::localRes(const Iterator &it, const Grid *grid, const Grid *rhs) c
 
 	/// Constructs an actual SOR solver
 SOR::SOR(const Geometry *geom, const real_t &omega): Solver(geom) {
-#ifdef USE_OPT_OMEGA
+	_omega = omega;
+	if(_omega == 0) {
 	// optimized omega after lecture (middle over h_x and h_y)
 	_omega = 2 / (1 + sin(M_PI*((_geom->Mesh()[0] + _geom->Mesh()[1]) /2)));
-#else
-	_omega = omega;
-#endif  // USE_OPT_OMEGA
+	}
 }
 
   /// Destructor

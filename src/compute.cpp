@@ -18,15 +18,15 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_geom = geom;
 	_param = param;
 	_comm = comm;
+	_max_dt = 1.0;
+
 	// Initializing time, dtlimit and epslimit_
 	_t = 0.0;
 	multi_real_t h = _geom->Mesh();
-// #ifdef USE_OPT_DT
+
 	_dtlimit = h[0] * h[0] * h[1] * h[1] * _param->Re() /
 			( 2 * ((h[0] * h[0]) + (h[1] * h[1])));
-// #else
-// 	_dtlimit = _param->Dt();
-// #endif  // USE_OPT_DT
+
 	_epslimit = _param->Eps() * _param->Eps() * _geom->Size()[0] * _geom->Size()[1];
 
 	// creating grids with offset
@@ -86,31 +86,19 @@ void Compute::TimeStep(bool printInfo){
 
 	// Compute like in script page 23
 	//compute dt
-// #ifdef USE_OPT_DT
-	multi_real_t max;
-	max[0] = _u->Max();
-	max[1] = _v->Max();
-	real_t dt;
-	real_t limit = _dtlimit;
-	if(max[0] > 0 && max[1] > 0){
-	   if(_geom->Mesh()[0]/max[0] < _geom->Mesh()[1]/max[1]){
-	 	limit = _geom->Mesh()[0]/max[0];
-	   }else{
-		limit = _geom->Mesh()[1]/max[1];
-	   }
+
+	real_t dt = _param->Dt();
+    if(dt == 0){
+		dt = std::min<real_t>(abs(_geom->Mesh()[0]/_u->AbsMax()),abs(_geom->Mesh()[1]/_v->AbsMax()));
+		dt = std::min<real_t>(dt,_dtlimit);
+		dt *= _param->Tau();
 	}
-	if(_dtlimit > limit){
-		dt = limit * _param->Tau();
-	}else{
-		dt = _dtlimit * _param->Tau();
-	}
-// #else
-// 	real_t dt = _dtlimit * _param->Tau();
-// #endif  // USE_OPT_DT
 
 	if(printInfo) {
 		printf("dt: %f \n", dt);
 	}
+
+	_max_dt = std::min<real_t>(_max_dt, dt);
 
 
 	// compute FG and update bound.
