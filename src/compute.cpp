@@ -103,14 +103,19 @@ void Compute::TimeStep(bool printInfo){
 
 	// compute FG and update bound.
 	MomentumEqu(dt);
+
+	//TODO
+	// Wenn wir mpi nutzen, Boundaries für F und G austauschen
 	_geom->Update_U(_F);
 	_geom->Update_V(_G);
 
 	// compute rhs and update bound.
 	RHS(dt);
-	_geom->Update_P(_rhs);
+	//_geom->Update_P(_rhs);
 
 	// Solver, relative eps had bad performance
+	//TODO
+	//Use RedBlackSolver and Update/communicate p
 	index_t index = 0;
 	real_t res = 1;
 	while(index < _param->IterMax() && res > _epslimit) {
@@ -125,6 +130,9 @@ void Compute::TimeStep(bool printInfo){
 
 	//compute uv and update bound.
 	NewVelocities(dt);
+
+	//TODO
+	// Wenn wir mpi nutzen, Boundaries für u und v austauschen
 	_geom->Update_U(_u);
 	_geom->Update_V(_v);
 
