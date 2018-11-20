@@ -73,7 +73,14 @@ public:
   /// Destructor
   ~RedOrBlackSOR();
 
+  /// Returns the total residual and executes a red - solver cycle starting at the left down corner
+  // @param grid current pressure values
+  // @param rhs right hand side
   real_t RedCycle(Grid *grid, const Grid *rhs) const;
+
+  /// Returns the total residual and executes a black - solver cycle starting at the left down corner + 1
+  // @param grid current pressure values
+  // @param rhs right hand side
   real_t BlackCycle(Grid *grid, const Grid *rhs) const;
 };
 //------------------------------------------------------------------------------

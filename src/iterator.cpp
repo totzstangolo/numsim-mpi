@@ -43,6 +43,11 @@ void Iterator::Next(){
 	_value++;
 	_valid = ((_geom->Size()[0]+2)*(_geom->Size()[1]+2) > _value); //Check if the value is even valid
 }
+/// Goes to the second next element of the iterator, disables it if position is end
+void Iterator::DoubleNext(){
+	_value+= 2;
+	_valid = ((_geom->Size()[0]+2)*(_geom->Size()[1]+2) > _value); //Check if the value is even valid
+}
 
 /// Checks if the iterator still has a valid value
 bool Iterator::Valid() const{
@@ -107,6 +112,16 @@ void InteriorIterator::Next() {
 		_value = _value + 3;
 	} else { //not at the border
 		_value++;
+	}
+	_valid = (_value < (((_geom->Size()[1]+2) - 1)*(_geom->Size()[0]+2)));
+}
+
+void InteriorIterator::DoubleNext() {
+	multi_index_t pos = this->Pos();
+	if( pos[0] >= (_geom->Size()[0] - 1)){
+			_value+= 4;
+	}else {
+	_value+= 2;
 	}
 	_valid = (_value < (((_geom->Size()[1]+2) - 1)*(_geom->Size()[0]+2)));
 }

@@ -76,3 +76,50 @@ real_t SOR::Cycle(Grid *grid, const Grid *rhs) const{
 	}
 	return _global_normed_res;
 }
+
+	//Constructs an RedOrBlackSOR-Solver
+RedOrBlackSOR::RedOrBlackSOR(const Geometry *geom, const real_t &omega) : SOR(geom, omega){
+
+}
+
+	//Destructor
+RedOrBlackSOR::~RedOrBlackSOR(){
+
+}
+
+real_t RedOrBlackSOR::RedCycle(Grid *grid, const Grid *rhs) const{
+	//pre compute const. factor
+	real_t _const_cor = (_geom->Mesh()[0] * _geom->Mesh()[0] * _geom->Mesh()[1] * _geom->Mesh()[1] /
+			(2.0 * (_geom->Mesh()[0] * _geom->Mesh()[0] + _geom->Mesh()[1] * _geom->Mesh()[1])));
+	real_t _global_normed_res = 0.0;
+	real_t _l_res = 0.0;
+	InteriorIterator intIterator(_geom);
+	for(intIterator.First(); intIterator.Valid(); intIterator.DoubleNext()) {
+		_l_res = localRes(intIterator, grid, rhs);
+		// norm residuum
+		_global_normed_res += _l_res * _l_res;
+		grid->Cell(intIterator) += _omega * _const_cor * _l_res;
+	}
+	return _global_normed_res;
+}
+
+real_t RedOrBlackSOR::BlackCycle(Grid *grid, const Grid *rhs) const{
+	//pre compute const. factor
+	real_t _const_cor = (_geom->Mesh()[0] * _geom->Mesh()[0] * _geom->Mesh()[1] * _geom->Mesh()[1] /
+			(2.0 * (_geom->Mesh()[0] * _geom->Mesh()[0] + _geom->Mesh()[1] * _geom->Mesh()[1])));
+	real_t _global_normed_res = 0.0;
+	real_t _l_res = 0.0;
+	InteriorIterator intIterator(_geom);
+	intIterator.First();
+	for(intIterator.Next(); intIterator.Valid(); intIterator.DoubleNext()) {
+		_l_res = localRes(intIterator, grid, rhs);
+		// norm residuum
+		_global_normed_res += _l_res * _l_res;
+		grid->Cell(intIterator) += _omega * _const_cor * _l_res;
+	}
+	return _global_normed_res;
+}
+
+
+
+

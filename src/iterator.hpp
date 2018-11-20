@@ -40,6 +40,9 @@ public:
   virtual void First();
   /// Goes to the next element of the iterator, disables it if position is end
   virtual void Next();
+  /// Goes to the second next element of the iterator, disables it if position is end
+  virtual void DoubleNext();
+
 
   /// Checks if the iterator still has a valid value
   virtual bool Valid() const;
@@ -78,6 +81,9 @@ public:
   void First();
   /// Goes to the next element of the iterator, disables it if position is end
   void Next();
+  /// Goes to the second next element of the iterator, disables it if position is end
+  void DoubleNext();
+
 };
 
 //------------------------------------------------------------------------------
