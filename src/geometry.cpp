@@ -44,8 +44,8 @@ Geometry::Geometry() : _comm(NULL) {
 Geometry::Geometry(const Communicator *comm) : _comm(comm) {
   _length[0] = 1.0;
   _length[1] = 1.0;
-  _size[0] = 16;//128;
-  _size[1] = 16;//128;
+  _size[0] = 64;//128;
+  _size[1] = 64;//128;
   _h[0] = _length[0] / _size[0];
   _h[1] = _length[1] / _size[1];
   _pressure = 0.0;
@@ -169,6 +169,7 @@ void Geometry::Update_U(Grid *u) const {
 		bIt.SetBoundary(3);
 		for(bIt.First(); bIt.Valid(); bIt.Next()){
 			u->Cell(bIt.Left()) = 0.0;
+			u->Cell(bIt) = 0.0;
 		}
 	}
 }
@@ -197,6 +198,7 @@ void Geometry::Update_V(Grid *v) const {
  	if (_comm && _comm->isTop()) {
 		bIt.SetBoundary(2);
 		for(bIt.First(); bIt.Valid(); bIt.Next()){
+			v->Cell(bIt) = _velocity[1];
 			v->Cell(bIt.Down()) = _velocity[1];
 		}
  	}

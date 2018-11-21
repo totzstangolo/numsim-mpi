@@ -36,12 +36,13 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_u = new Grid(_geom, compute_offset_x);
 	_F = new Grid(_geom, compute_offset_x);
 	_u->Initialize(0);
-
 	_comm->copyBoundary(_u);
+	_geom->Update_U(_u);
+
+	//_comm->copyBoundary(_u);
 	// _comm->~Communicator();
     // exit(0);
 
-	_geom->Update_U(_u);
 
 	multi_real_t compute_offset_y;
 	compute_offset_y[0] = -0.5 * h[0];
@@ -49,9 +50,8 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_v = new Grid(_geom, compute_offset_y);
 	_G = new Grid(_geom, compute_offset_y);
 	_v->Initialize(0);
-	_geom->Update_V(_v);
-
 	_comm->copyBoundary(_v);
+	_geom->Update_V(_v);
 
 	multi_real_t compute_offset_p;
 	compute_offset_p[0] = -0.5 * h[0];
@@ -60,12 +60,15 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 	_rhs = new Grid(_geom, compute_offset_p);
 	_tmp = new Grid(_geom, compute_offset_p);
 	_p->Initialize(0);
-
 	_comm->copyBoundary(_p);
-	_comm->gatherSum(_u->Max());
+	_geom->Update_P(_p);
+	//_comm->gatherSum(_u->Max());
 
 	//create solver (used script omega, not param omega)
 	_solver = new SOR(_geom, _param->Omega());
+	if(_comm->getSize() >1) {
+		RedOrBlackSOR *_rb_solver = (RedOrBlackSOR *)_solver;
+	}
 
 
 }
@@ -86,6 +89,7 @@ void Compute::TimeStep(bool printInfo){
 
 	// Compute like in script page 23
 	//compute dt
+	//printf("pmax: %f\n", _p->Max());
 
 	real_t dt = _param->Dt();
     if(dt == 0){
@@ -98,14 +102,20 @@ void Compute::TimeStep(bool printInfo){
 		printf("dt: %f \n", dt);
 	}
 
+	if(_comm->getSize() >1) {
+		dt = _comm->gatherMin(dt);
+	}
 	_max_dt = std::min<real_t>(_max_dt, dt);
 
 
 	// compute FG and update bound.
 	MomentumEqu(dt);
 
-	//TODO
 	// Wenn wir mpi nutzen, Boundaries für F und G austauschen
+	if(_comm->getSize() >1) {
+		_comm->copyBoundary(_F);
+		_comm->copyBoundary(_G);
+	}
 	_geom->Update_U(_F);
 	_geom->Update_V(_G);
 
@@ -119,20 +129,48 @@ void Compute::TimeStep(bool printInfo){
 	index_t index = 0;
 	real_t res = 1;
 	while(index < _param->IterMax() && res > _epslimit) {
-		index++;
-		res = _solver->Cycle(_p, _rhs);
-		_geom->Update_P(_p);
+	index++;
+		if(_comm->getSize() >1) {
+			RedOrBlackSOR *_rb_solver = (RedOrBlackSOR *)_solver;
+			//MPI
+			if(_comm->EvenOdd()){
+				res = _rb_solver->RedCycle(_p, _rhs);
+				_comm->copyBoundary(_p);
+				_geom->Update_P(_p);
+				res += _rb_solver->BlackCycle(_p, _rhs);
+				_comm->copyBoundary(_p);
+				_geom->Update_P(_p);
+			} else {
+				res += _rb_solver->BlackCycle(_p, _rhs);
+				_comm->copyBoundary(_p);
+				_geom->Update_P(_p);
+				res = _rb_solver->RedCycle(_p, _rhs);
+				_comm->copyBoundary(_p);
+				_geom->Update_P(_p);
+			}
+			res = _comm->gatherSum(res);
+		} else{
+			//No MPI
+			res = _solver->Cycle(_p, _rhs);
+			_geom->Update_P(_p);
+
+		}
 	}
+
+
 	if(printInfo) {
 		printf("iterations: %d / %d \n", index, _param->IterMax());
-	printf("pmax: %f\n", _p->Max());
+	// printf("pmax: %4f \n", _p->Max());
 	}
 
 	//compute uv and update bound.
 	NewVelocities(dt);
 
-	//TODO
 	// Wenn wir mpi nutzen, Boundaries für u und v austauschen
+	if(_comm->getSize() >1) {
+		_comm->copyBoundary(_u);
+		_comm->copyBoundary(_v);
+	}
 	_geom->Update_U(_u);
 	_geom->Update_V(_v);
 

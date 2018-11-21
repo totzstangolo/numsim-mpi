@@ -64,7 +64,7 @@ protected:
 };
 //------------------------------------------------------------------------------
 
-/** concrete Red or Balck SOR solver
+/** concrete Red or Black SOR solver
  */
 class RedOrBlackSOR : public SOR {
 public:
