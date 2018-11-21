@@ -41,23 +41,18 @@ Communicator::Communicator(int *argc, char ***argv){
     MPI_Comm_size(MPI_COMM_WORLD,&_size);
     MPI_Comm_rank(MPI_COMM_WORLD,&_rank);
     int dim[2] = {1,1};
-    if(_rank==0){
-        int l_div=1;
-        while(dim[1]<sqrt(_size)+1){
-            if(_size % dim[1] == 0) l_div = dim[1];
-            dim[1]++;
-        }
-        dim[1] = l_div;
-        dim[0] = _size/dim[1];
-        if(dim[1]>dim[0]){
-            l_div = dim[1];
-            dim[1] = dim[0];
-            dim[0] = l_div;
-        }
-        // std::cerr << "Decomposition: (" << dim[0] << ","
-        // << dim[1] << ")" << std::endl;
+    int l_div=1;
+    while(dim[1]<sqrt(_size)+1){
+        if(_size % dim[1] == 0) l_div = dim[1];
+        dim[1]++;
     }
-    MPI_Bcast(dim,2,MPI_INT,0,MPI_COMM_WORLD);
+    dim[1] = l_div;
+    dim[0] = _size/dim[1];
+    if(dim[1]>dim[0]){
+        l_div = dim[1];
+        dim[1] = dim[0];
+        dim[0] = l_div;
+    }
     _tdim[0]=dim[0];
     _tdim[1]=dim[1];
 
@@ -196,7 +191,6 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
     int counter = 0;
     if(!isRight()){
         MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        // std::cout << _rank << " received from " << _rank+1 << std::endl;
     }
     if(!isLeft()){
         BoundaryIterator iterL(grid->getGeometry());
@@ -207,7 +201,6 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
         }
         MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
     }
-
     BoundaryIterator iterR(grid->getGeometry());
     iterR.SetBoundary(3);
     counter=0;
@@ -240,8 +233,6 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
         }
         MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank+1,1,MPI_COMM_WORLD);
     }
-    std::cout << "Right number of moves: " << counter << std::endl;
-
     BoundaryIterator iterL(grid->getGeometry());
     iterL.SetBoundary(1);
     counter=0;
@@ -249,8 +240,6 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
         grid->Cell(iterL) = recvBuf[counter];
         counter++;
     }
-    std::cout << "Left number of moves: " << counter << std::endl
-    << " And size: " << size << std::endl;
     return true;
 }
 

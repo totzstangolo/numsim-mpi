@@ -49,36 +49,46 @@ const real_t &Grid::Cell(const Iterator &it) const{
 /// Interpolate the value at a arbitrary position
 // pos a value in the domain e.g. between 0 and 1
 //Offset: p = {0.0,0.0}, u = {0.0,0.5}, v = {0.5,0.0}
-real_t Grid::Interpolate(const multi_real_t &pos) const{
-	if (pos[0]>_geom->Length()[0] || pos[1]>_geom->Length()[1]){
-		cout << "Position request out of bounds. Exiting." << endl;
-		exit(0);
-	}
-	multi_real_t length = _geom->Length();
-	multi_index_t size = _geom->Size();
-	multi_real_t h = _geom->Mesh();
-
-	index_t one = (pos[0]/h[0]-_offset[0])+1;
-	index_t two = (pos[1]/h[1]-_offset[1])+1;
-
-	index_t iterValue = one+(size[0]+2)*two;
-
-	Iterator iter = Iterator(_geom,iterValue);
-
-	multi_real_t dist;
-
-	// (possibly negative) x- and y-distance from sampling point
-	// to interpolation point pos
-	dist[0] = pos[0]-(iter.Right().Pos()[0]-1)*h[0]-_offset[0]*h[0];
-	dist[1] = pos[1]-(iter.Top().Pos()[1]-1)*h[1]-_offset[1]*h[1];
-
-	multi_real_t interpx;
-	real_t interpy;
-	interpx[0] = (Cell(iter.Right())-Cell(iter))/h[0]*dist[0]+Cell(iter.Right());
-	interpx[1] = (Cell(iter.Top().Right())-Cell(iter.Top()))/h[0]*dist[0]+Cell(iter.Top().Right());
-	interpy = (interpx[1]-interpx[0])/h[1]*dist[1]+interpx[1];
-	return interpy;
+real_t Grid::Interpolate (const multi_real_t& pos) const {
+	index_t idx[DIM][2];
+	real_t alpha[DIM];
+	multi_index_t _size;
+	_size[0] = 1;
+	_size[1] = _geom->Size()[0];
+	for (uint32_t i=0;i<DIM;++i) {
+		if (pos[i] > _offset[i]) {
+			alpha[i]  = (pos[i] - _offset[i])/_geom->Mesh()[i];
+			idx[i][0] = floor(alpha[i]);
+			alpha[i] -= idx[i][0];
+		}
+		else {
+			alpha[i] = 0;
+			idx[i][0] = 0;
+		}
+		idx[i][1] = idx[i][0] + 1;
+		if (idx[i][1] >= _geom->Size()[i])
+			idx[i][1] = idx[i][0];
+    }
+	real_t res = 0.0;
+    real_t weight;
+    index_t node;
+    for (uint32_t i=0;i<(1<<DIM);++i) {
+		weight = 1.0;
+		node = 0;
+		for (uint32_t d=0;d<DIM;++d) {
+			if (i&(1<<d)) {
+				weight *= alpha[d];
+				node += idx[d][1]*_size[d];
+			} else {
+				weight *= (1.0 - alpha[d]);
+				node += idx[d][0]*_size[d];
+			}
+		}
+		res += _data[node]*weight;
+    }
+    return res;
 }
+
 
 /// Computes the left-sided difference quotient in x-dim at [it]
 real_t Grid::dx_l(const Iterator &it) const{

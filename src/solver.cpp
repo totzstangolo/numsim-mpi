@@ -119,7 +119,3 @@ real_t RedOrBlackSOR::BlackCycle(Grid *grid, const Grid *rhs) const{
 	}
 	return _global_normed_res;
 }
-
-
-
-
