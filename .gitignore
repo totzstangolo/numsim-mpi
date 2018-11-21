@@ -1,4 +1,6 @@
 build
+html
+latex
 # Created by https://www.gitignore.io/api/vim,c++,scons
 
 ### C++ ###
@@ -34,6 +36,9 @@ build
 *.exe
 *.out
 *.app
+
+# doxygen config
+*.cfg
 
 ### SCons ###
 # for projects that use SCons for building: http://http://www.scons.org/

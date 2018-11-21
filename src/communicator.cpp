@@ -29,10 +29,13 @@
 //////////////////
 
 //------------------------------------------------------------------------------
-// Determines _tdim by determining largest divisor of N_processes, while
-// being smaller than sqrt(N_processes).
-// _tdim is then {N_processes/divisor, divisor} (except for N_processes = 2).
-// Rank 0 broadcasts _tdim to the remaining processes.
+/** Determines _tdim by determining largest divisor of N_processes, while
+ *  being smaller than sqrt(N_processes).
+ *  _tdim is then {N_processes/divisor, divisor} (except for N_processes = 2).
+ *  Rank 0 broadcasts _tdim to the remaining processes.
+ *  Checkerboard bool assignment by realizing that all equal colors
+ *  have even (odd) sum of dimensions.
+ */
 Communicator::Communicator(int *argc, char ***argv){
     MPI_Init(argc,argv);
     _tdim[0]=0;
@@ -53,6 +56,8 @@ Communicator::Communicator(int *argc, char ***argv){
             dim[1] = dim[0];
             dim[0] = l_div;
         }
+        // std::cerr << "Decomposition: (" << dim[0] << ","
+        // << dim[1] << ")" << std::endl;
     }
     MPI_Bcast(dim,2,MPI_INT,0,MPI_COMM_WORLD);
     _tdim[0]=dim[0];
@@ -64,17 +69,6 @@ Communicator::Communicator(int *argc, char ***argv){
     }else{
         _evenodd = false;
     }
-    // char *color;
-    // if(_evenodd){
-    //     color = "Red";
-    // }else{
-    //     color = "Black";
-    // }
-    // std::cout << "My (rank " << _rank <<") Position is " <<_tidx[0]<<","<<_tidx[1]
-    // << " and am I at Left? " << isLeft() << std::endl;
-    // if(_rank==0){
-    //     std::cout << _tdim[0]<<","<<_tdim[1]<< std::endl;
-    // }
 }
 
   /** Communicator destructor; finalizes MPI Environment
@@ -221,12 +215,10 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
             counter++;
         }
         MPI_Send(&sendBuf,size[1],MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
-        std::cout << _rank << " sent to " << _rank-1 << std::endl;
     }
     if(!isRight()){
         MPI_Recv(&recvBuf,size[1],MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-        std::cout << _rank << " received from " << _rank+1 << std::endl;
     }
     BoundaryIterator iterR(grid->getGeometry());
     iterR.SetBoundary(3);
@@ -257,12 +249,10 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
             counter++;
         }
         MPI_Send(&sendBuf,size[1],MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD);
-        std::cout << _rank << " sent to " << _rank+1 << std::endl;
     }
     if(!isLeft()){
         MPI_Recv(&recvBuf,size[1],MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-        std::cout << _rank << " received from " << _rank-1 << std::endl;
     }
     BoundaryIterator iterL(grid->getGeometry());
     iterL.SetBoundary(1);
@@ -293,12 +283,10 @@ bool Communicator::copyTopBoundary(Grid *grid) const{
             counter++;
         }
         MPI_Send(&sendBuf,size[0],MPI_DOUBLE,_rank+ThreadDim()[0],0,MPI_COMM_WORLD);
-        std::cout << _rank << " sent to " << _rank+ThreadDim()[0] << std::endl;
     }
     if(!isBottom()){
         MPI_Recv(&recvBuf,size[0],MPI_DOUBLE,_rank-ThreadDim()[0],0,MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-        std::cout << _rank << " received from " << _rank-ThreadDim()[0] << std::endl;
     }
     BoundaryIterator iterB(grid->getGeometry());
     iterB.SetBoundary(0);
@@ -329,12 +317,10 @@ bool Communicator::copyBottomBoundary(Grid *grid) const{
             counter++;
         }
         MPI_Send(&sendBuf,size[0],MPI_DOUBLE,_rank-ThreadDim()[0],0,MPI_COMM_WORLD);
-        std::cout << _rank << " sent to " << _rank-ThreadDim()[0] << std::endl;
     }
     if(!isTop()){
         MPI_Recv(&recvBuf,size[0],MPI_DOUBLE,_rank+ThreadDim()[0],0,MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-        std::cout << _rank << " received from " << _rank+ThreadDim()[0] << std::endl;
     }
     BoundaryIterator iterT(grid->getGeometry());
     iterT.SetBoundary(2);

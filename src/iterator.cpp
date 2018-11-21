@@ -14,12 +14,6 @@ Iterator::Iterator(const Geometry *geom, const index_t &value): Iterator(geom){
 	_valid = ((_geom->Size()[0]+2)*(_geom->Size()[1]+2) > value); //Check if the value is even valid
 }
 
-//maybe add a destructor
-//Iterator::~Iterator(){
-//	// TODO maybe needs an implementation
-//	// I am not sure when and how memory should be released.
-//}
-
 ///     Returns the current position value
 const index_t &Iterator::Value() const{
 	return _value;
