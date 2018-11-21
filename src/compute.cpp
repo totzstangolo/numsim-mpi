@@ -133,21 +133,21 @@ void Compute::TimeStep(bool printInfo){
 		if(_comm->getSize() >1) {
 			RedOrBlackSOR *_rb_solver = (RedOrBlackSOR *)_solver;
 			//MPI
-			if(_comm->EvenOdd()){
+			//if(_comm->EvenOdd()){
 				res = _rb_solver->RedCycle(_p, _rhs);
 				_comm->copyBoundary(_p);
 				_geom->Update_P(_p);
 				res += _rb_solver->BlackCycle(_p, _rhs);
 				_comm->copyBoundary(_p);
 				_geom->Update_P(_p);
-			} else {
+			/*} else {
 				res += _rb_solver->BlackCycle(_p, _rhs);
 				_comm->copyBoundary(_p);
 				_geom->Update_P(_p);
 				res = _rb_solver->RedCycle(_p, _rhs);
 				_comm->copyBoundary(_p);
 				_geom->Update_P(_p);
-			}
+			}*/
 			res = _comm->gatherSum(res);
 		} else{
 			//No MPI

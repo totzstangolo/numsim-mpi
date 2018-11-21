@@ -33,8 +33,6 @@
  *  being smaller than sqrt(N_processes).
  *  _tdim is then {N_processes/divisor, divisor} (except for N_processes = 2).
  *  Rank 0 broadcasts _tdim to the remaining processes.
- *  Checkerboard bool assignment by realizing that all equal colors
- *  have even (odd) sum of dimensions.
  */
 Communicator::Communicator(int *argc, char ***argv){
     MPI_Init(argc,argv);
@@ -64,11 +62,6 @@ Communicator::Communicator(int *argc, char ***argv){
     _tdim[1]=dim[1];
 
     _tidx = {_rank % _tdim[0], _rank / _tdim[0]};
-    if((_tidx[0]+_tidx[1])%2==0){
-        _evenodd = true;
-    }else{
-        _evenodd = false;
-    }
 }
 
   /** Communicator destructor; finalizes MPI Environment
@@ -90,11 +83,6 @@ const multi_index_t &Communicator::ThreadDim() const{
     return _tdim;
 }
 
-  /** Returns whether this process is a red or a black field
-   */
-const bool &Communicator::EvenOdd() const{
-    return _evenodd;
-}
 
   /** Gets the sum of all values and distributes the result among all
    *  processes
@@ -202,11 +190,14 @@ const int &Communicator::getSize() const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyLeftBoundary(Grid *grid) const{
-    multi_index_t size = {grid->getGeometry()->Size()[0],
-                          grid->getGeometry()->Size()[1]};
-    double sendBuf[size[1]];
-    double recvBuf[size[1]];
+    index_t size = grid->getGeometry()->Size()[1];
+    double sendBuf[size];
+    double recvBuf[size];
     int counter = 0;
+    if(!isRight()){
+        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        // std::cout << _rank << " received from " << _rank+1 << std::endl;
+    }
     if(!isLeft()){
         BoundaryIterator iterL(grid->getGeometry());
         iterL.SetBoundary(1);
@@ -214,12 +205,9 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
             sendBuf[counter] = grid->Cell(iterL.Right());
             counter++;
         }
-        MPI_Send(&sendBuf,size[1],MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
+        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
     }
-    if(!isRight()){
-        MPI_Recv(&recvBuf,size[1],MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD,
-             MPI_STATUS_IGNORE);
-    }
+
     BoundaryIterator iterR(grid->getGeometry());
     iterR.SetBoundary(3);
     counter=0;
@@ -236,11 +224,13 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyRightBoundary(Grid *grid) const{
-    multi_index_t size = {grid->getGeometry()->Size()[0],
-                          grid->getGeometry()->Size()[1]};
-    double sendBuf[size[1]];
-    double recvBuf[size[1]];
+    index_t size = grid->getGeometry()->Size()[1];
+    double sendBuf[size];
+    double recvBuf[size];
     int counter = 0;
+    if(!isLeft()){
+        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank-1,1,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    }
     if(!isRight()){
         BoundaryIterator iterR(grid->getGeometry());
         iterR.SetBoundary(3);
@@ -248,12 +238,10 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
             sendBuf[counter] = grid->Cell(iterR.Left());
             counter++;
         }
-        MPI_Send(&sendBuf,size[1],MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD);
+        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank+1,1,MPI_COMM_WORLD);
     }
-    if(!isLeft()){
-        MPI_Recv(&recvBuf,size[1],MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD,
-             MPI_STATUS_IGNORE);
-    }
+    std::cout << "Right number of moves: " << counter << std::endl;
+
     BoundaryIterator iterL(grid->getGeometry());
     iterL.SetBoundary(1);
     counter=0;
@@ -261,6 +249,8 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
         grid->Cell(iterL) = recvBuf[counter];
         counter++;
     }
+    std::cout << "Left number of moves: " << counter << std::endl
+    << " And size: " << size << std::endl;
     return true;
 }
 
@@ -270,11 +260,13 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyTopBoundary(Grid *grid) const{
-    multi_index_t size = {grid->getGeometry()->Size()[0],
-                          grid->getGeometry()->Size()[1]};
-    double sendBuf[size[0]];
-    double recvBuf[size[0]];
+    index_t size = grid->getGeometry()->Size()[0];
+    double sendBuf[size];
+    double recvBuf[size];
     int counter = 0;
+    if(!isBottom()){
+        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank-ThreadDim()[0],2,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    }
     if(!isTop()){
         BoundaryIterator iterT(grid->getGeometry());
         iterT.SetBoundary(2);
@@ -282,12 +274,9 @@ bool Communicator::copyTopBoundary(Grid *grid) const{
             sendBuf[counter] = grid->Cell(iterT.Down());
             counter++;
         }
-        MPI_Send(&sendBuf,size[0],MPI_DOUBLE,_rank+ThreadDim()[0],0,MPI_COMM_WORLD);
+        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank+ThreadDim()[0],2,MPI_COMM_WORLD);
     }
-    if(!isBottom()){
-        MPI_Recv(&recvBuf,size[0],MPI_DOUBLE,_rank-ThreadDim()[0],0,MPI_COMM_WORLD,
-             MPI_STATUS_IGNORE);
-    }
+
     BoundaryIterator iterB(grid->getGeometry());
     iterB.SetBoundary(0);
     counter=0;
@@ -304,11 +293,13 @@ bool Communicator::copyTopBoundary(Grid *grid) const{
    * \param [in] grid  values whose boundary shall be synced
    */
 bool Communicator::copyBottomBoundary(Grid *grid) const{
-    multi_index_t size = {grid->getGeometry()->Size()[0],
-                          grid->getGeometry()->Size()[1]};
-    double sendBuf[size[0]];
-    double recvBuf[size[0]];
+    index_t size = grid->getGeometry()->Size()[0];
+    double sendBuf[size];
+    double recvBuf[size];
     int counter = 0;
+    if(!isTop()){
+        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank+ThreadDim()[0],3,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    }
     if(!isBottom()){
         BoundaryIterator iterB(grid->getGeometry());
         iterB.SetBoundary(0);
@@ -316,12 +307,9 @@ bool Communicator::copyBottomBoundary(Grid *grid) const{
             sendBuf[counter] = grid->Cell(iterB.Top());
             counter++;
         }
-        MPI_Send(&sendBuf,size[0],MPI_DOUBLE,_rank-ThreadDim()[0],0,MPI_COMM_WORLD);
+        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank-ThreadDim()[0],3,MPI_COMM_WORLD);
     }
-    if(!isTop()){
-        MPI_Recv(&recvBuf,size[0],MPI_DOUBLE,_rank+ThreadDim()[0],0,MPI_COMM_WORLD,
-             MPI_STATUS_IGNORE);
-    }
+
     BoundaryIterator iterT(grid->getGeometry());
     iterT.SetBoundary(2);
     counter=0;

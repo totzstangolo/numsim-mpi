@@ -45,10 +45,6 @@ public:
    */
   const multi_index_t &ThreadDim() const;
 
-  /** Returns whether this process is a red or a black field
-   */
-  const bool &EvenOdd() const;
-
   /** Gets the sum of all values and distributes the result among all
    *  processes
    *
@@ -105,7 +101,6 @@ private:
   multi_index_t _tdim;
   int _rank;
   int _size;
-  bool _evenodd;
 
   /** Function to sync ghost layer on left boundary:
    *  send values of own left boundary to left neighbor and
