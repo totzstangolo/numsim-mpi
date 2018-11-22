@@ -39,6 +39,11 @@ void Iterator::Next () {
 	if (_value >= _geom->Size()[0]*_geom->Size()[1])
 		_valid = false;
 }
+
+void Iterator::DoubleNext(){
+	_value+= 2;
+	_valid = ((_geom->Size()[0])*(_geom->Size()[1]) > _value); //Check if the value is even valid
+}
 //------------------------------------------------------------------------------
 bool Iterator::Valid () const {
 	return _valid;
@@ -77,6 +82,15 @@ void InteriorIterator::Next  () {
     if (!_valid) return;
     ++_value;
     if (_value%_geom->Size()[0] >= (_geom->Size()[1] - 1)) _value += 2;
+    if (_value >= _geom->Size()[0]*(_geom->Size()[1]-1)) _valid = false;
+}
+
+void InteriorIterator::DoubleNext(){
+	if (this->Pos()[0] >= (_geom->Size()[0] - 3)){
+		_value+= 4;
+	} else {
+		_value+= 2;
+	}
     if (_value >= _geom->Size()[0]*(_geom->Size()[1]-1)) _valid = false;
 }
 //------------------------------------------------------------------------------
@@ -138,19 +152,6 @@ void BoundaryIterator::Next () {
 	};
 }
 
-void InteriorIterator::DoubleNext() {
-	multi_index_t pos = this->Pos();
-	if( pos[0] >= (_geom->Size()[0] - 2)){
-			_value+= 3;
-	}else {
-	_value+= 2;
-	}
-	_valid = (_value < (((_geom->Size()[1]) - 1)*(_geom->Size()[0])));
-}
 
 
-void Iterator::DoubleNext(){
-	_value+= 2;
-	_valid = ((_geom->Size()[0])*(_geom->Size()[1]) > _value); //Check if the value is even valid
-}
 //------------------------------------------------------------------------------
