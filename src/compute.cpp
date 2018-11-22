@@ -98,15 +98,14 @@ void Compute::TimeStep(bool printInfo){
 		dt *= _param->Tau();
 	}
 
-	if(printInfo) {
-		printf("dt: %f \n", dt);
-	}
-
 	if(_comm->getSize() >1) {
 		dt = _comm->gatherMin(dt);
 	}
 	_max_dt = std::min<real_t>(_max_dt, dt);
 
+	if(printInfo) {
+		printf("dt: %f \n", dt);
+	}
 
 	// compute FG and update bound.
 	MomentumEqu(dt);

@@ -164,7 +164,7 @@ real_t Grid::DC_vdv_y(const Iterator &it, const real_t &alpha) const{
 
 /// Returns the maximal value of the grid
 real_t Grid::Max() const{
-	Iterator *iter = new Iterator(_geom);
+	InteriorIterator *iter = new InteriorIterator(_geom);
 	real_t max = Cell(*iter);
 	for(iter->First();iter->Valid();iter->Next()){
 		if (max < Cell(*iter)) max = Cell(*iter);
@@ -173,7 +173,7 @@ real_t Grid::Max() const{
 }
 /// Returns the minimal value of the grid
 real_t Grid::Min() const{
-	Iterator *iter = new Iterator(_geom);
+	InteriorIterator *iter = new InteriorIterator(_geom);
 	real_t min = Cell(*iter);
 	for(iter->First();iter->Valid();iter->Next()){
 		if (min > Cell(*iter)) min = Cell(*iter);
@@ -183,7 +183,7 @@ real_t Grid::Min() const{
 
 /// Returns the absolute maximal value
 real_t Grid::AbsMax() const{
-	Iterator *iter = new Iterator(_geom);
+	InteriorIterator *iter = new InteriorIterator(_geom);
 	real_t max = Cell(*iter);
 	for(iter->First();iter->Valid();iter->Next()){
 		if (max < abs(Cell(*iter))) max = abs(Cell(*iter));

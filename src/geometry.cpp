@@ -44,8 +44,8 @@ Geometry::Geometry() : _comm(NULL) {
 Geometry::Geometry(const Communicator *comm) : _comm(comm) {
   _length[0] = 1.0;
   _length[1] = 1.0;
-  _size[0] = 32;//128;
-  _size[1] = 32;//128;
+  _size[0] = 32;
+  _size[1] = 32;
   _h[0] = _length[0] / _size[0];
   _h[1] = _length[1] / _size[1];
   _pressure = 0.0;
