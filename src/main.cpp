@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
 #ifdef USE_DEBUG_VISU
     // Render and check if window is closed
     switch (visu.Render(visugrid)) {
+    //switch (visu.Render(visugrid, comm.gatherMin(visugrid->Min()), comm.gatherMax(visugrid->Max()))) {
     case -1:
       return -1;
     case 0:
