@@ -45,39 +45,39 @@ INCLUDE_DIRECTORIES(${INCLUDE_DIRECTORIES} ${MPI_INCLUDE_PATH})
 
 # Using glob is discouraged in cmake.
 set (HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/communicator.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/compute.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/geometry.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/grid.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/iterator.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/parameter.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/solver.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/typedef.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/vtk.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/zeitgeist.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/communicator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/compute.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometry.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/grid.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/iterator.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/parameter.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/solver.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/typedef.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/vtk.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/zeitgeist.hpp
   )
 
 set (SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/communicator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/compute.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/geometry.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/grid.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/iterator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/parameter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/solver.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/vtk.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/communicator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/compute.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/geometry.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/grid.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/iterator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/parameter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/solver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/vtk.cpp
   )
 
 if (DEBUG_VISU)
   set (HEADERS
     ${HEADERS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/visu.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/visu.hpp
     )
 
   set (SOURCES
     ${SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/FluidSolver/src/visu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/visu.cpp
     )
 
   add_definitions(-DUSE_DEBUG_VISU)
@@ -86,16 +86,16 @@ endif (DEBUG_VISU)
 add_executable (NumSim ${SOURCES})
 target_link_libraries (NumSim ${SDL2_LIBRARIES} ${MPI_LIBRARIES})
 
-set (HEAD
-  ${CMAKE_CURRENT_SOURCE_DIR}/Magrathea/src/tga.hpp
-  )
+#set (HEAD
+#  ${CMAKE_CURRENT_SOURCE_DIR}/Magrathea/src/tga.hpp
+#  )
 
-set (SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/Magrathea/src/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Magrathea/src/tga.cpp
-  )
+#set (SRCS
+#  ${CMAKE_CURRENT_SOURCE_DIR}/Magrathea/src/main.cpp
+#  ${CMAKE_CURRENT_SOURCE_DIR}/Magrathea/src/tga.cpp
+#  )
 
-add_executable (magrathea ${SRCS})
+#add_executable (magrathea ${SRCS})
 
 if (MPI_COMPILE_FLAGS)
   set_target_properties(NumSim PROPERTIES
