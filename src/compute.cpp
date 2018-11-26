@@ -66,10 +66,6 @@ Compute::Compute(const Geometry *geom, const Parameter *param,
 
 	//create solver (used script omega, not param omega)
 	_solver = new SOR(_geom, _param->Omega());
-	if(_comm->getSize() >1) {
-		RedOrBlackSOR *_rb_solver = (RedOrBlackSOR *)_solver;
-	}
-
 
 }
 

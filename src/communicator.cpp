@@ -39,7 +39,7 @@ Communicator::Communicator(int *argc, char ***argv){
     _tdim[0]=0;
     _tdim[1]=0;
     MPI_Comm_size(MPI_COMM_WORLD,&_size);
-    MPI_Comm_rank(MPI_COMM_WORLD,&_rank);
+     MPI_Comm_rank(MPI_COMM_WORLD,&_rank);
     int dim[2] = {1,1};
     int l_div=1;
     while(dim[1]<sqrt(_size)+1){
@@ -307,7 +307,7 @@ bool Communicator::copyTopBoundary(Grid *grid) const{
             grid->Cell(iter) = buff[counter];
             counter++;
         }
-    } else{
+    } else if(!isTop()){
         BoundaryIterator iter(grid->getGeometry());
         iter.SetBoundary(2);
         for(iter.First();iter.Valid();iter.Next()){
@@ -353,7 +353,7 @@ bool Communicator::copyBottomBoundary(Grid *grid) const{
             grid->Cell(iter) = buff[counter];
             counter++;
         }
-    } else{
+    } else if(!isBottom()){
         BoundaryIterator iter(grid->getGeometry());
         iter.SetBoundary(0);
         for(iter.First();iter.Valid();iter.Next()){
