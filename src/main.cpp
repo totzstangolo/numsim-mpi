@@ -54,6 +54,8 @@ int main(int argc, char **argv) {
     }
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+
 // Create and initialize the visualization
 #ifdef USE_DEBUG_VISU
   Renderer visu(geom.Length(), geom.Mesh());

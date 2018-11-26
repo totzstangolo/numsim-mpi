@@ -186,27 +186,42 @@ const int &Communicator::getSize() const{
    */
 bool Communicator::copyLeftBoundary(Grid *grid) const{
     index_t size = grid->getGeometry()->Size()[1];
-    double sendBuf[size];
-    double recvBuf[size];
+    double buff[size];
     int counter = 0;
-    if(!isRight()){
-        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-    if(!isLeft()){
+    if(!isRight() && !isLeft()){
+	MPI_Status status;
         BoundaryIterator iterL(grid->getGeometry());
         iterL.SetBoundary(1);
         for(iterL.First();iterL.Valid();iterL.Next()){
-            sendBuf[counter] = grid->Cell(iterL.Right());
+            buff[counter] = grid->Cell(iterL.Right());
+            counter++;
+	}
+	MPI_Sendrecv_replace(&buff, size, MPI_DOUBLE, _rank-1, 0, _rank+1, 0, MPI_COMM_WORLD,
+                       &status);
+	BoundaryIterator iterR(grid->getGeometry());
+	iterR.SetBoundary(3);
+    	counter=0;
+        for(iterR.First();iterR.Valid();iterR.Next()){
+           grid->Cell(iterR) = buff[counter];
+           counter++;
+        }
+    } else if(!isRight()) {
+        MPI_Recv(buff,size,MPI_DOUBLE,_rank+1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	BoundaryIterator iterR(grid->getGeometry());
+	iterR.SetBoundary(3);
+    	counter=0;
+    	for(iterR.First();iterR.Valid();iterR.Next()){
+           grid->Cell(iterR) = buff[counter];
+           counter++;
+    	}
+    } else {
+        BoundaryIterator iterL(grid->getGeometry());
+        iterL.SetBoundary(1);
+        for(iterL.First();iterL.Valid();iterL.Next()){
+            buff[counter] = grid->Cell(iterL.Right());
             counter++;
         }
-        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
-    }
-    BoundaryIterator iterR(grid->getGeometry());
-    iterR.SetBoundary(3);
-    counter=0;
-    for(iterR.First();iterR.Valid();iterR.Next()){
-        grid->Cell(iterR) = recvBuf[counter];
-        counter++;
+        MPI_Send(&buff,size,MPI_DOUBLE,_rank-1,0,MPI_COMM_WORLD);
     }
     return true;
 }
@@ -218,27 +233,42 @@ bool Communicator::copyLeftBoundary(Grid *grid) const{
    */
 bool Communicator::copyRightBoundary(Grid *grid) const{
     index_t size = grid->getGeometry()->Size()[1];
-    double sendBuf[size];
-    double recvBuf[size];
+    double buff[size];
     int counter = 0;
-    if(!isLeft()){
-        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank-1,1,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    }
-    if(!isRight()){
+    if(!isRight() && !isLeft()){
+	MPI_Status status;
         BoundaryIterator iterR(grid->getGeometry());
         iterR.SetBoundary(3);
         for(iterR.First();iterR.Valid();iterR.Next()){
-            sendBuf[counter] = grid->Cell(iterR.Left());
+            buff[counter] = grid->Cell(iterR.Left());
             counter++;
         }
-        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank+1,1,MPI_COMM_WORLD);
-    }
-    BoundaryIterator iterL(grid->getGeometry());
-    iterL.SetBoundary(1);
-    counter=0;
-    for(iterL.First();iterL.Valid();iterL.Next()){
-        grid->Cell(iterL) = recvBuf[counter];
-        counter++;
+	MPI_Sendrecv_replace(&buff, size, MPI_DOUBLE, _rank+1, 1, _rank-1, 1, MPI_COMM_WORLD,
+                       &status);
+        BoundaryIterator iterL(grid->getGeometry());
+        iterL.SetBoundary(1);
+        counter=0;
+        for(iterL.First();iterL.Valid();iterL.Next()){
+            grid->Cell(iterL) = buff[counter];
+            counter++;
+        }
+    } else if(!isLeft()) {
+        MPI_Recv(buff,size,MPI_DOUBLE,_rank-1,1,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	BoundaryIterator iterL(grid->getGeometry());
+	iterL.SetBoundary(1);
+    	counter=0;
+    	for(iterL.First();iterL.Valid();iterL.Next()){
+           grid->Cell(iterL) = buff[counter];
+           counter++;
+    	}
+    } else {
+        BoundaryIterator iterL(grid->getGeometry());
+        iterL.SetBoundary(3);
+        for(iterL.First();iterL.Valid();iterL.Next()){
+            buff[counter] = grid->Cell(iterL.Left());
+            counter++;
+        }
+        MPI_Send(&buff,size,MPI_DOUBLE,_rank+1,1,MPI_COMM_WORLD);
     }
     return true;
 }
@@ -250,28 +280,41 @@ bool Communicator::copyRightBoundary(Grid *grid) const{
    */
 bool Communicator::copyTopBoundary(Grid *grid) const{
     index_t size = grid->getGeometry()->Size()[0];
-    double sendBuf[size];
-    double recvBuf[size];
+    double buff[size];
     int counter = 0;
-    if(!isBottom()){
-        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank-ThreadDim()[0],2,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    }
-    if(!isTop()){
-        BoundaryIterator iterT(grid->getGeometry());
-        iterT.SetBoundary(2);
-        for(iterT.First();iterT.Valid();iterT.Next()){
-            sendBuf[counter] = grid->Cell(iterT.Down());
+   if(!isTop() && !isBottom()){
+	MPI_Status status;
+        BoundaryIterator iter(grid->getGeometry());
+        iter.SetBoundary(2);
+        for(iter.First();iter.Valid();iter.Next()){
+            buff[counter] = grid->Cell(iter.Down());
             counter++;
         }
-        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank+ThreadDim()[0],2,MPI_COMM_WORLD);
-    }
-
-    BoundaryIterator iterB(grid->getGeometry());
-    iterB.SetBoundary(0);
-    counter=0;
-    for(iterB.First();iterB.Valid();iterB.Next()){
-        grid->Cell(iterB) = recvBuf[counter];
-        counter++;
+	MPI_Sendrecv_replace(&buff, size, MPI_DOUBLE,_rank + ThreadDim()[0], 2, _rank - ThreadDim()[0], 2, MPI_COMM_WORLD,
+                       &status);
+        iter.SetBoundary(0);
+        counter=0;
+        for(iter.First();iter.Valid();iter.Next()){
+            grid->Cell(iter) = buff[counter];
+            counter++;
+        }
+    } else if(!isBottom()) {
+        MPI_Recv(&buff,size,MPI_DOUBLE,_rank-ThreadDim()[0],2,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        BoundaryIterator iter(grid->getGeometry());
+        iter.SetBoundary(0);
+        counter=0;
+        for(iter.First();iter.Valid();iter.Next()){
+            grid->Cell(iter) = buff[counter];
+            counter++;
+        }
+    } else{
+        BoundaryIterator iter(grid->getGeometry());
+        iter.SetBoundary(2);
+        for(iter.First();iter.Valid();iter.Next()){
+            buff[counter] = grid->Cell(iter.Down());
+            counter++;
+        }
+        MPI_Send(&buff,size,MPI_DOUBLE,_rank+ThreadDim()[0],2,MPI_COMM_WORLD);
     }
     return true;
 }
@@ -283,28 +326,41 @@ bool Communicator::copyTopBoundary(Grid *grid) const{
    */
 bool Communicator::copyBottomBoundary(Grid *grid) const{
     index_t size = grid->getGeometry()->Size()[0];
-    double sendBuf[size];
-    double recvBuf[size];
+    double buff[size];
     int counter = 0;
-    if(!isTop()){
-        MPI_Recv(&recvBuf,size,MPI_DOUBLE,_rank+ThreadDim()[0],3,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    }
-    if(!isBottom()){
-        BoundaryIterator iterB(grid->getGeometry());
-        iterB.SetBoundary(0);
-        for(iterB.First();iterB.Valid();iterB.Next()){
-            sendBuf[counter] = grid->Cell(iterB.Top());
+   if(!isTop() && !isBottom()){
+	MPI_Status status;
+        BoundaryIterator iter(grid->getGeometry());
+        iter.SetBoundary(0);
+        for(iter.First();iter.Valid();iter.Next()){
+            buff[counter] = grid->Cell(iter.Top());
             counter++;
         }
-        MPI_Send(&sendBuf,size,MPI_DOUBLE,_rank-ThreadDim()[0],3,MPI_COMM_WORLD);
-    }
-
-    BoundaryIterator iterT(grid->getGeometry());
-    iterT.SetBoundary(2);
-    counter=0;
-    for(iterT.First();iterT.Valid();iterT.Next()){
-        grid->Cell(iterT) = recvBuf[counter];
-        counter++;
+	MPI_Sendrecv_replace(&buff, size, MPI_DOUBLE,_rank - ThreadDim()[0], 3, _rank + ThreadDim()[0], 3, MPI_COMM_WORLD,
+                       &status);
+        iter.SetBoundary(2);
+        counter=0;
+        for(iter.First();iter.Valid();iter.Next()){
+            grid->Cell(iter) = buff[counter];
+            counter++;
+        }
+    } else if(!isTop()) {
+        MPI_Recv(&buff,size,MPI_DOUBLE,_rank+ThreadDim()[0],3,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        BoundaryIterator iter(grid->getGeometry());
+        iter.SetBoundary(2);
+        counter=0;
+        for(iter.First();iter.Valid();iter.Next()){
+            grid->Cell(iter) = buff[counter];
+            counter++;
+        }
+    } else{
+        BoundaryIterator iter(grid->getGeometry());
+        iter.SetBoundary(0);
+        for(iter.First();iter.Valid();iter.Next()){
+            buff[counter] = grid->Cell(iter.Top());
+            counter++;
+        }
+        MPI_Send(&buff,size,MPI_DOUBLE,_rank-ThreadDim()[0],3,MPI_COMM_WORLD);
     }
     return true;
 }
